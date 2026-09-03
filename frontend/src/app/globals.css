@@ -2,22 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MapLibre popup styling */
+:root {
+  --bg-deep: #06090e;
+  --bg-surface: #0c111a;
+  --bg-elevated: #121824;
+  --bg-card: #141c2b;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-active: rgba(56, 189, 248, 0.35);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-weather: #38bdf8;
+  --accent-safe: #10b981;
+  --accent-warning: #f59e0b;
+  --accent-severe: #ef4444;
+}
+
+/* Base resets & typography */
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Tabular numbers for scientific readings & timers */
+.font-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Scientific grid background effect */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+.bg-radial-fade {
+  background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+}
+
+/* MapLibre dark theme refinements */
+.maplibregl-canvas-container {
+  cursor: crosshair;
+}
+
+.maplibregl-ctrl-group {
+  background: #0c111a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.maplibregl-ctrl-group button {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background-color: #1a2233 !important;
+}
+
+.maplibregl-ctrl-icon {
+  filter: invert(1) brightness(1.2);
+}
+
 .maplibregl-popup-content {
-  background: #1e293b !important;
+  background: #0d1320 !important;
   color: #f1f5f9 !important;
   border-radius: 8px !important;
   padding: 0 !important;
-  border: 1px solid #334155 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+  font-family: inherit !important;
 }
 
 .maplibregl-popup-tip {
-  border-top-color: #1e293b !important;
+  border-top-color: #0d1320 !important;
+  border-bottom-color: #0d1320 !important;
 }
 
 .maplibregl-popup-close-button {
   color: #94a3b8 !important;
-  font-size: 16px !important;
-  padding: 4px 8px !important;
+  font-size: 15px !important;
+  padding: 6px 10px !important;
+}
+
+.maplibregl-popup-close-button:hover {
+  color: #f8fafc !important;
+  background: transparent !important;
 }
