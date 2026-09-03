@@ -1,0 +1,12 @@
+from fastapi import APIRouter
+from app.api.v1.stations import router as stations_router
+from app.api.v1.observations import router as observations_router
+from app.api.v1.forecast import router as forecast_router
+from app.api.v1.health import router as health_router
+
+router = APIRouter()
+
+router.include_router(stations_router, prefix="/stations", tags=["stations"])
+router.include_router(observations_router, prefix="/observations", tags=["observations"])
+router.include_router(forecast_router, prefix="/forecast", tags=["forecast"])
+router.include_router(health_router, tags=["health"])

@@ -1,0 +1,41 @@
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Node
+node_modules/
+**/node_modules/
+dist/
+build/
+.next/
+**/.next/
+npm-debug.log
+yarn-error.log
+
+# Python
+venv/
+**/venv/
+env/
+**/env/
+.env
+
+# Data / Models / Cache
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/test_aerosense.db
+data/aerosense.db
+ml/models/*.json
+ml/models/*.bin
+ml/models/*.pkl
+
+# Logs
+logs/
+*.log
+

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data:/app/data
+      - ../ml/models:/app/ml/models
+    environment:
+      - APP_MODE=DEMO
+      - DATABASE_URL=sqlite:////app/data/aerosense.db
+
+  frontend:
+    image: node:20-slim
+    working_dir: /app/frontend
+    volumes:
+      - ../frontend:/app/frontend
+    ports:
+      - "3000:3000"
+    command: npm run dev
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000

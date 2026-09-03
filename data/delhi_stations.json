@@ -1,0 +1,402 @@
+[
+  {
+    "id": "anand_vihar",
+    "name": "Anand Vihar",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6468,
+    "longitude": 77.3160,
+    "operating_agency": "DPCC",
+    "zone_type": "Commercial"
+  },
+  {
+    "id": "alipur",
+    "name": "Alipur",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.8153,
+    "longitude": 77.1530,
+    "operating_agency": "DPCC",
+    "zone_type": "Rural"
+  },
+  {
+    "id": "ashok_vihar",
+    "name": "Ashok Vihar",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6954,
+    "longitude": 77.1817,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "aya_nagar",
+    "name": "Aya Nagar",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.4707,
+    "longitude": 77.1099,
+    "operating_agency": "IMD",
+    "zone_type": "Peri-urban"
+  },
+  {
+    "id": "bawana",
+    "name": "Bawana",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.7762,
+    "longitude": 77.0511,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "crri_mathura_road",
+    "name": "CRRI Mathura Road",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5512,
+    "longitude": 77.2736,
+    "operating_agency": "CPCB",
+    "zone_type": "Traffic"
+  },
+  {
+    "id": "dtu",
+    "name": "DTU",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.7501,
+    "longitude": 77.1113,
+    "operating_agency": "CPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "dwarka_sec8",
+    "name": "Dwarka Sector 8",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5710,
+    "longitude": 77.0667,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "east_arjun_nagar",
+    "name": "East Arjun Nagar",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6559,
+    "longitude": 77.2849,
+    "operating_agency": "CPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "ihbas",
+    "name": "IHBAS Dilshad Garden",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6811,
+    "longitude": 77.3153,
+    "operating_agency": "CPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "ito",
+    "name": "ITO",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6286,
+    "longitude": 77.2410,
+    "operating_agency": "CPCB",
+    "zone_type": "Traffic"
+  },
+  {
+    "id": "jahangirpuri",
+    "name": "Jahangirpuri",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.7328,
+    "longitude": 77.1706,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "jln_stadium",
+    "name": "JLN Stadium",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5802,
+    "longitude": 77.2338,
+    "operating_agency": "DPCC",
+    "zone_type": "Urban"
+  },
+  {
+    "id": "lodhi_road",
+    "name": "Lodhi Road",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5918,
+    "longitude": 77.2273,
+    "operating_agency": "IMD",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "major_dhyan_chand",
+    "name": "Major Dhyan Chand Stadium",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6113,
+    "longitude": 77.2377,
+    "operating_agency": "DPCC",
+    "zone_type": "Commercial"
+  },
+  {
+    "id": "mandir_marg",
+    "name": "Mandir Marg",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6365,
+    "longitude": 77.2011,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "mundka",
+    "name": "Mundka",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6847,
+    "longitude": 77.0766,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "najafgarh",
+    "name": "Najafgarh",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6090,
+    "longitude": 76.9798,
+    "operating_agency": "DPCC",
+    "zone_type": "Semi-rural"
+  },
+  {
+    "id": "narela",
+    "name": "Narela",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.8527,
+    "longitude": 77.0925,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "nehru_nagar",
+    "name": "Nehru Nagar",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5679,
+    "longitude": 77.2505,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "north_campus_du",
+    "name": "North Campus DU",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6940,
+    "longitude": 77.2159,
+    "operating_agency": "IMD",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "nsut_dwarka",
+    "name": "NSUT Dwarka",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6003,
+    "longitude": 77.0335,
+    "operating_agency": "CPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "okhla_phase2",
+    "name": "Okhla Phase 2",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5308,
+    "longitude": 77.2716,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "patparganj",
+    "name": "Patparganj",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6238,
+    "longitude": 77.2872,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "punjabi_bagh",
+    "name": "Punjabi Bagh",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6740,
+    "longitude": 77.1310,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "pusa_dpcc",
+    "name": "Pusa DPCC",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6396,
+    "longitude": 77.1462,
+    "operating_agency": "DPCC",
+    "zone_type": "Agricultural"
+  },
+  {
+    "id": "pusa_imd",
+    "name": "Pusa IMD",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6340,
+    "longitude": 77.1578,
+    "operating_agency": "IMD",
+    "zone_type": "Agricultural"
+  },
+  {
+    "id": "rk_puram",
+    "name": "RK Puram",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5633,
+    "longitude": 77.1869,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "rohini",
+    "name": "Rohini",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.7325,
+    "longitude": 77.1199,
+    "operating_agency": "DPCC",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "shadipur",
+    "name": "Shadipur",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6515,
+    "longitude": 77.1581,
+    "operating_agency": "CPCB",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "sirifort",
+    "name": "Sirifort",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.5504,
+    "longitude": 77.2159,
+    "operating_agency": "CPCB",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "wazirpur",
+    "name": "Wazirpur",
+    "city": "Delhi",
+    "state": "Delhi",
+    "latitude": 28.6997,
+    "longitude": 77.1654,
+    "operating_agency": "DPCC",
+    "zone_type": "Industrial"
+  },
+  {
+    "id": "noida_sec62",
+    "name": "Noida Sector 62",
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "latitude": 28.6245,
+    "longitude": 77.3648,
+    "operating_agency": "UPPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "noida_sec125",
+    "name": "Noida Sector 125",
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "latitude": 28.5447,
+    "longitude": 77.3331,
+    "operating_agency": "UPPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "greater_noida",
+    "name": "Greater Noida",
+    "city": "Greater Noida",
+    "state": "Uttar Pradesh",
+    "latitude": 28.4727,
+    "longitude": 77.4890,
+    "operating_agency": "UPPCB",
+    "zone_type": "Institutional"
+  },
+  {
+    "id": "ghaziabad_vasundhara",
+    "name": "Vasundhara Ghaziabad",
+    "city": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "latitude": 28.6603,
+    "longitude": 77.3573,
+    "operating_agency": "UPPCB",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "ghaziabad_indirapuram",
+    "name": "Indirapuram Ghaziabad",
+    "city": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "latitude": 28.6465,
+    "longitude": 77.3705,
+    "operating_agency": "UPPCB",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "gurugram_vikas_sadan",
+    "name": "Vikas Sadan Gurugram",
+    "city": "Gurugram",
+    "state": "Haryana",
+    "latitude": 28.4501,
+    "longitude": 77.0264,
+    "operating_agency": "HSPCB",
+    "zone_type": "Commercial"
+  },
+  {
+    "id": "gurugram_sec51",
+    "name": "Sector 51 Gurugram",
+    "city": "Gurugram",
+    "state": "Haryana",
+    "latitude": 28.4275,
+    "longitude": 77.0818,
+    "operating_agency": "HSPCB",
+    "zone_type": "Residential"
+  },
+  {
+    "id": "faridabad_sec16a",
+    "name": "Sector 16A Faridabad",
+    "city": "Faridabad",
+    "state": "Haryana",
+    "latitude": 28.4088,
+    "longitude": 77.3178,
+    "operating_agency": "HSPCB",
+    "zone_type": "Commercial"
+  }
+]
