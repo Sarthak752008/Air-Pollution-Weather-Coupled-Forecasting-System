@@ -10,7 +10,11 @@ import {
   TransportResponse,
   ForecastExplanation,
   EvaluationBenchmarkResponse,
-  SelectModelResponse
+  SelectModelResponse,
+  PresetScenario,
+  ScenarioResponse,
+  BlendedForecastResponse,
+  WRFChemStatus
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -61,4 +65,16 @@ export const api = {
   getHorizonEvaluation: () => fetchAPI<{ horizons: number[]; horizon_data: any[]; selected_model_id: string }>('/api/v1/evaluation/horizons'),
   getPeakEventMetrics: () => fetchAPI<{ threshold_pm25: number; models: any[]; selected_model_id: string }>('/api/v1/evaluation/peak-events'),
   selectActiveModel: (modelId: string) => fetchPostAPI<SelectModelResponse>('/api/v1/evaluation/select-model', { model_id: modelId }),
+
+  // Phase 4 What-If Scenarios & WRF-Chem Blending APIs
+  getScenarioPresets: () => fetchAPI<{ presets: PresetScenario[] }>('/api/v1/scenarios/presets'),
+  simulateScenario: (params: {
+    station_id: string;
+    wind_speed_delta_pct: number;
+    rainfall_mm: number;
+    fire_activity_delta_pct: number;
+    scenario_name?: string;
+  }) => fetchPostAPI<ScenarioResponse>('/api/v1/scenarios/simulate', params),
+  getBlendedForecast: (stationId: string) => fetchAPI<BlendedForecastResponse>(`/api/v1/forecast/blended/${stationId}`),
+  getWRFChemStatus: () => fetchAPI<WRFChemStatus>('/api/v1/wrfchem/status'),
 };

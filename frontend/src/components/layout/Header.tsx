@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ModeIndicator from '../status/ModeIndicator';
 import DataFreshnessStatus from '../status/DataFreshness';
-import { LayoutDashboard, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, BarChart3, FlaskConical } from 'lucide-react';
 
 export default function Header({
   mode = 'DEMO',
@@ -51,6 +51,17 @@ export default function Header({
           >
             <BarChart3 className="w-3.5 h-3.5" />
             Model Evaluation
+          </Link>
+          <Link
+            href="/scenarios"
+            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              pathname === '/scenarios'
+                ? 'bg-slate-800 text-slate-100 shadow-xs'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            What-If Lab
           </Link>
         </nav>
       </div>

@@ -229,3 +229,109 @@ export interface SelectModelResponse {
   message: string;
   timestamp: string;
 }
+
+// ── Phase 4 What-If Scenarios & WRF-Chem Types ──
+
+export interface ScenarioPoint {
+  hour_offset: number;
+  timestamp: string;
+  baseline_pm25: number;
+  scenario_pm25: number;
+  delta_pm25: number;
+  uncertainty_lower: number;
+  uncertainty_upper: number;
+  baseline_aqi: number | null;
+  scenario_aqi: number | null;
+  scenario_aqi_category: string | null;
+  scenario_aqi_color: string | null;
+}
+
+export interface ScenarioSummaryDelta {
+  mean_baseline_pm25: number;
+  mean_scenario_pm25: number;
+  net_change_pm25: number;
+  net_change_pct: number;
+  air_quality_impact: string;
+}
+
+export interface ScenarioExplanation {
+  headline: string;
+  primary_mechanisms: string[];
+  physical_rationale: string;
+}
+
+export interface ScenarioResponse {
+  scenario_name: string;
+  station_id: string;
+  station_name: string;
+  parameters: {
+    wind_speed_delta_pct: number;
+    rainfall_mm: number;
+    fire_activity_delta_pct: number;
+  };
+  summary_delta: ScenarioSummaryDelta;
+  explanation: ScenarioExplanation;
+  assumptions: string[];
+  disclaimer: string;
+  points: ScenarioPoint[];
+}
+
+export interface PresetScenario {
+  id: string;
+  name: string;
+  description: string;
+  wind_speed_delta_pct: number;
+  rainfall_mm: number;
+  fire_activity_delta_pct: number;
+}
+
+export interface BlendedPoint {
+  hour_offset: number;
+  timestamp: string;
+  physics_pm25: number;
+  ai_residual_pm25: number;
+  blended_pm25: number;
+  uncertainty_lower_pm25: number;
+  uncertainty_upper_pm25: number;
+  physics_o3: number;
+  physics_no2: number;
+  temperature: number;
+  wind_speed: number;
+  pblh: number;
+  aqi: number | null;
+  aqi_category: string | null;
+  aqi_color: string | null;
+}
+
+export interface ForecastProvenance {
+  forecast_type: string;
+  physics_provider: string;
+  physics_model: string;
+  chemistry_mechanism: string;
+  source_file: string;
+  ai_residual_corrector: string;
+  blending_formulation: string;
+  blending_weights: {
+    physics_weight: number;
+    ai_residual_weight: number;
+  };
+  mean_bias_correction_pm25: number;
+  generated_at: string;
+}
+
+export interface BlendedForecastResponse {
+  station_id: string;
+  station_name: string;
+  horizon_hours: number;
+  provenance: ForecastProvenance;
+  points: BlendedPoint[];
+}
+
+export interface WRFChemStatus {
+  netcdf_support: boolean;
+  directory: string;
+  available_files: string[];
+  default_file: string;
+  status: string;
+}
+
