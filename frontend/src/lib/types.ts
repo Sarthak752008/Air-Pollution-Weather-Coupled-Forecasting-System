@@ -81,3 +81,83 @@ export interface DataFreshness {
   observation_count: number;
   station_count: number;
 }
+
+// ── Phase 2 Atmospheric Intelligence Types ──
+
+export interface AtmosphericRegime {
+  regime: string;
+  confidence: number;
+  explanation: string;
+  severity_level: 'low' | 'moderate' | 'high' | 'severe';
+  timestamp: string;
+  mode: string;
+}
+
+export interface DerivedIndices {
+  ventilation_index: number;
+  ventilation_category: string;
+  stagnation_index: number;
+  inversion_risk_score: number;
+  wind_transport_indicator: number;
+  timestamp: string;
+  mode: string;
+}
+
+export interface ActiveFirePoint {
+  id: string;
+  latitude: number;
+  longitude: number;
+  frp: number;
+  brightness: number;
+  confidence: string;
+  acq_date: string;
+  acq_time: string;
+  satellite: string;
+  source: string;
+}
+
+export interface ActiveFiresResponse {
+  fires: ActiveFirePoint[];
+  count: number;
+  total_frp: number;
+  mode: string;
+  last_updated: string;
+}
+
+export interface TransportCorridor {
+  id: string;
+  origin_cluster: string;
+  destination: string;
+  bearing_degrees: number;
+  wind_speed_kmh: number;
+  estimated_transit_hours: number;
+  transport_risk: 'low' | 'moderate' | 'elevated' | 'severe';
+  coordinates: [number, number][];
+}
+
+export interface TransportResponse {
+  corridors: TransportCorridor[];
+  dominant_wind_direction: number;
+  wind_speed_ms: number;
+  disclaimer: string;
+  mode: string;
+}
+
+export interface DriverAttribution {
+  factor: string;
+  impact: 'trapping' | 'clearing' | 'advection' | 'emission';
+  contribution_pct: number;
+  description: string;
+}
+
+export interface ForecastExplanation {
+  station_id: string;
+  station_name: string;
+  summary: string;
+  regime: string;
+  primary_driver: string;
+  secondary_driver: string;
+  dispersion_rating: string;
+  drivers: DriverAttribution[];
+  mode: string;
+}
