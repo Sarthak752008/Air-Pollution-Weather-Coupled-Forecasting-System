@@ -26,11 +26,10 @@ env/
 .env
 
 # Data / Models / Cache
-data/*.db
-data/*.sqlite
-data/*.sqlite3
-data/test_aerosense.db
-data/aerosense.db
+data/*.db*
+data/*.sqlite*
+data/test_aerosense.db*
+data/aerosense.db*
 ml/models/*.json
 ml/models/*.bin
 ml/models/*.pkl
