@@ -1,245 +1,511 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
-import dynamic from 'next/dynamic';
-import { api } from '@/lib/api';
+import React from 'react';
+import Link from 'next/link';
+import LandingNav from '@/components/landing/LandingNav';
+import AtmosphericCanvas from '@/components/landing/AtmosphericCanvas';
+import PipelineFlow from '@/components/landing/PipelineFlow';
+import WhatIfInteractivePreview from '@/components/landing/WhatIfInteractivePreview';
+import IllustrativeForecastChart from '@/components/landing/IllustrativeForecastChart';
 import {
-  Station,
-  Observation,
-  ForecastResponse,
-  HealthResponse,
-  AtmosphericRegime,
-  DerivedIndices,
-  ActiveFirePoint,
-  TransportCorridor,
-  ForecastExplanation
-} from '@/lib/types';
+  ArrowRight,
+  ArrowUpRight,
+  Wind,
+  Layers,
+  Flame,
+  CloudRain,
+  Share2,
+  Cpu,
+  ShieldCheck,
+  Compass,
+  CheckCircle2,
+  XCircle,
+  Activity,
+  Github
+} from 'lucide-react';
 
-import Header from '@/components/layout/Header';
-import CurrentStatus from '@/components/status/CurrentStatus';
-import StationPanel from '@/components/stations/StationPanel';
-import AtmosphericRegimeCard from '@/components/atmospheric/AtmosphericRegimeCard';
-import DerivedIndicesGrid from '@/components/atmospheric/DerivedIndicesGrid';
-import ForecastExplainer from '@/components/atmospheric/ForecastExplainer';
-
-// Dynamically import map and chart to avoid SSR issues
-const DelhiMap = dynamic(() => import('@/components/map/DelhiMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[520px] bg-slate-900 border border-slate-800 rounded-lg animate-pulse flex items-center justify-center text-slate-500 text-sm">
-      Loading interactive Delhi NCR map...
-    </div>
-  ),
-});
-
-const ForecastChart = dynamic(() => import('@/components/charts/ForecastChart'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[350px] bg-slate-900 border border-slate-800 rounded-lg animate-pulse flex items-center justify-center text-slate-500 text-sm">
-      Loading 72-hour forecast projection...
-    </div>
-  ),
-});
-
-export default function Dashboard() {
-  const [stations, setStations] = useState<Station[]>([]);
-  const [observations, setObservations] = useState<Record<string, Observation>>({});
-  const [selectedStationId, setSelectedStationId] = useState<string | null>('anand_vihar');
-  const [forecast, setForecast] = useState<ForecastResponse | null>(null);
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-
-  // Phase 2 State
-  const [regime, setRegime] = useState<AtmosphericRegime | null>(null);
-  const [indices, setIndices] = useState<DerivedIndices | null>(null);
-  const [activeFires, setActiveFires] = useState<ActiveFirePoint[]>([]);
-  const [transportCorridors, setTransportCorridors] = useState<TransportCorridor[]>([]);
-  const [dominantWindDir, setDominantWindDir] = useState<number>(300);
-  const [windSpeed, setWindSpeed] = useState<number>(3.2);
-  const [explanation, setExplanation] = useState<ForecastExplanation | null>(null);
-
-  const [loadingStations, setLoadingStations] = useState(true);
-  const [loadingForecast, setLoadingForecast] = useState(false);
-  const [loadingAtmospheric, setLoadingAtmospheric] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-
-  const fetchInitialData = async () => {
-    try {
-      setLoadingStations(true);
-      setLoadingAtmospheric(true);
-
-      const [
-        stationsRes,
-        obsRes,
-        healthRes,
-        regimeRes,
-        indicesRes,
-        firesRes,
-        transportRes
-      ] = await Promise.all([
-        api.getStations(),
-        api.getObservations(),
-        api.getHealth().catch(() => null),
-        api.getAtmosphericRegime().catch(() => null),
-        api.getDerivedIndices().catch(() => null),
-        api.getActiveFires().catch(() => null),
-        api.getTransportCorridors().catch(() => null),
-      ]);
-
-      setStations(stationsRes.stations);
-
-      const obsMap: Record<string, Observation> = {};
-      obsRes.observations.forEach((obs) => {
-        obsMap[obs.station_id] = obs;
-      });
-      setObservations(obsMap);
-      setLastUpdated(obsRes.last_updated);
-
-      if (healthRes) setHealth(healthRes);
-      if (regimeRes) setRegime(regimeRes);
-      if (indicesRes) setIndices(indicesRes);
-      if (firesRes) setActiveFires(firesRes.fires || []);
-      if (transportRes) {
-        setTransportCorridors(transportRes.corridors || []);
-        setDominantWindDir(transportRes.dominant_wind_direction || 300);
-        setWindSpeed(transportRes.wind_speed_ms || 3.2);
-      }
-
-      setError(null);
-
-      // Default station forecast & explainer
-      fetchStationDetails('anand_vihar');
-    } catch (err) {
-      console.error('Failed to fetch initial data:', err);
-      setError('Failed to load dashboard data. The backend server may be starting up or unreachable.');
-    } finally {
-      setLoadingStations(false);
-      setLoadingAtmospheric(false);
-    }
-  };
-
-  const fetchObservations = async () => {
-    try {
-      const res = await api.getObservations();
-      const obsMap: Record<string, Observation> = {};
-      res.observations.forEach((obs) => {
-        obsMap[obs.station_id] = obs;
-      });
-      setObservations(obsMap);
-      setLastUpdated(res.last_updated);
-    } catch (err) {
-      console.error('Failed to refresh observations:', err);
-    }
-  };
-
-  const fetchStationDetails = async (stationId: string) => {
-    try {
-      setLoadingForecast(true);
-      const [fcRes, expRes] = await Promise.all([
-        api.getForecast(stationId).catch(() => null),
-        api.getForecastExplanation(stationId).catch(() => null),
-      ]);
-      setForecast(fcRes);
-      setExplanation(expRes);
-    } catch (err) {
-      console.error('Failed to fetch station details:', err);
-    } finally {
-      setLoadingForecast(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInitialData();
-
-    // Auto-refresh observations every 5 minutes
-    const interval = setInterval(fetchObservations, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleSelectStation = (stationId: string) => {
-    setSelectedStationId(stationId);
-    fetchStationDetails(stationId);
-  };
-
-  const stationsWithObs = useMemo(() => {
-    return stations.map((station) => ({
-      ...station,
-      observation: observations[station.id],
-    }));
-  }, [stations, observations]);
-
-  const selectedObservation = selectedStationId ? observations[selectedStationId] || null : null;
-  const selectedStation = stations.find((s) => s.id === selectedStationId) || null;
-  const mode = health?.mode || 'DEMO';
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      <Header mode={mode} lastUpdated={lastUpdated} />
+    <div className="min-h-screen bg-[#06090e] text-slate-100 flex flex-col font-sans selection:bg-sky-500/20 selection:text-sky-200">
+      <LandingNav />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-5 flex flex-col gap-5">
-        {error && (
-          <div className="bg-rose-950/60 border border-rose-900/60 text-rose-300 p-3.5 rounded-lg text-xs">
-            {error}
-          </div>
-        )}
-
-        {/* 1. Atmospheric Regime Intelligence Card */}
-        <section>
-          <AtmosphericRegimeCard regime={regime} loading={loadingAtmospheric} />
-        </section>
-
-        {/* 2. Interactive Map with Layer Controls */}
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Delhi NCR & Regional Transport Map
-              </h2>
-              <span className="text-[10px] bg-slate-900 text-slate-500 px-1.5 py-0.5 rounded border border-slate-800">
-                40 CAAQMS Stations • NASA FIRMS Hotspots
-              </span>
+      {/* ── HERO SECTION ── */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-grid-pattern bg-radial-fade">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Hero Text */}
+          <div className="lg:col-span-6 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+              <span>SIH26082 • Delhi NCR Coupled Atmospheric Intelligence</span>
             </div>
-            <span className="text-[11px] text-slate-500 hidden sm:inline">
-              Click any station pin to update forecast and feature drivers
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
+              Forecast the air. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-300 to-indigo-300">
+                Understand the atmosphere.
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl font-normal">
+              AeroSense couples air-quality observations, meteorology, regional transport, and physics-guided AI to forecast Delhi NCR air quality up to 72 hours ahead.
+            </p>
+
+            {/* Primary CTAs */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                href="/workbench"
+                className="flex items-center gap-2 px-6 py-3 text-sm font-semibold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg transition-all shadow-[0_0_25px_rgba(56,189,248,0.3)] hover:shadow-[0_0_35px_rgba(56,189,248,0.45)]"
+              >
+                <span>Open Live Console</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <a
+                href="https://github.com/Sarthak752008/Air-Pollution-Weather-Coupled-Forecasting-System"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-5 py-3 text-sm font-medium text-slate-300 hover:text-white border border-white/10 hover:border-white/25 rounded-lg transition-all bg-white/[0.02] hover:bg-white/[0.05]"
+              >
+                <Github className="w-4 h-4" />
+                <span>View on GitHub</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
+              </a>
+            </div>
+
+            {/* Micro Story Flow */}
+            <div className="pt-6 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-mono text-slate-400 flex-wrap">
+              <span className="text-slate-300">CPCB + IMD + FIRMS</span>
+              <span>→</span>
+              <span className="text-sky-400">Data Fusion</span>
+              <span>→</span>
+              <span className="text-amber-400">Atmospheric Regime</span>
+              <span>→</span>
+              <span className="text-purple-400">AI + Physics</span>
+              <span>→</span>
+              <span className="text-emerald-400">72h Forecast</span>
+            </div>
+          </div>
+
+          {/* Hero Atmospheric Visual */}
+          <div className="lg:col-span-6">
+            <AtmosphericCanvas />
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 1: THE PROBLEM ── */}
+      <section id="product" className="py-24 border-t border-white/[0.06] bg-[#080d16]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-16">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              The Atmospheric Problem
             </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              Delhi’s air is not driven by pollution alone.
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-4">
+              A pure statistical model reading historical PM2.5 fails whenever cold winter air traps smoke near the ground or strong breezes sweep it away. Delhi NCR’s air quality is governed by coupled meteorological forcing.
+            </p>
           </div>
 
-          <DelhiMap
-            stations={stationsWithObs}
-            onSelectStation={handleSelectStation}
-            selectedStationId={selectedStationId}
-            activeFires={activeFires}
-            transportCorridors={transportCorridors}
-            windDirection={dominantWindDir}
-            windSpeedMs={windSpeed}
-            inversionRiskScore={indices?.inversion_risk_score ?? 45}
-          />
-        </section>
-
-        {/* 3. Current Selected Station Status & Derived Indices Grid */}
-        <section className="flex flex-col gap-3">
-          <CurrentStatus observation={selectedObservation} loading={loadingStations} />
-          <DerivedIndicesGrid indices={indices} loading={loadingAtmospheric} />
-        </section>
-
-        {/* 4. Forecast Dynamics & Explainability Section */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Left: 72-Hour PM2.5 Forecast Chart */}
-          <div className="flex flex-col gap-2">
-            <ForecastChart forecast={forecast} loading={loadingForecast} />
+          {/* Atmospheric Split Diagram */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { label: 'Surface Emissions', desc: 'Vehicular, industrial, dust', icon: Activity, accent: '#ef4444' },
+              { label: 'Wind Advection', desc: 'Direction & speed dilution', icon: Wind, accent: '#38bdf8' },
+              { label: 'Thermal Profile', desc: 'Diurnal cooling & heating', icon: Flame, accent: '#f59e0b' },
+              { label: 'Relative Humidity', desc: 'Aerosol hygroscopic growth', icon: CloudRain, accent: '#60a5fa' },
+              { label: 'Boundary Inversion', desc: 'PBLH compression trapping', icon: Layers, accent: '#a855f7' },
+              { label: 'Regional Transport', desc: 'Upstream biomass plume', icon: Compass, accent: '#f97316' },
+            ].map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={idx}
+                  className="bg-[#0c111a] border border-white/[0.06] rounded-xl p-4 flex flex-col justify-between h-36 hover:border-white/[0.14] transition-colors"
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-2"
+                    style={{ backgroundColor: `${item.accent}15`, color: item.accent }}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-white leading-snug">{item.label}</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">{item.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Right: "Why is Pollution Expected to Change?" Explainer */}
-          <div className="flex flex-col gap-2">
-            <ForecastExplainer explanation={explanation} loading={loadingForecast} />
+          <div className="mt-8 p-4 rounded-xl bg-sky-500/[0.04] border border-sky-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-sky-200">
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              Six coupled physical processes integrated into one unified mathematical forecasting state.
+            </span>
+            <span className="text-slate-400">dC/dt = -u·∇C + ∇·(K∇C) + S - D + R</span>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 5. Comprehensive Station Pollutant & Meteorology Breakdown */}
-        <section>
-          <StationPanel observation={selectedObservation} station={selectedStation} />
-        </section>
-      </main>
+      {/* ── SECTION 2: THE DIFFERENCE ── */}
+      <section className="py-24 border-t border-white/[0.06] bg-[#06090e]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-16">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              The Architecture Difference
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              Most systems forecast the number. <br />
+              AeroSense explains the conditions behind it.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Traditional Systems */}
+            <div className="bg-[#0c111a] border border-white/[0.06] rounded-xl p-6 md:p-8 space-y-6">
+              <div className="flex items-center gap-2 text-xs font-mono text-rose-400 uppercase tracking-wider">
+                <XCircle className="w-4 h-4 text-rose-500" />
+                <span>Traditional Statistical / Generic AI</span>
+              </div>
+              <h3 className="text-lg font-bold text-white">
+                Black-Box Time-Series Extrapolation
+              </h3>
+              <ul className="space-y-3 text-xs text-slate-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-500 font-bold">•</span>
+                  <span>Treats Delhi air as isolated autoregressive values without meteorology.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-500 font-bold">•</span>
+                  <span>Cannot predict sudden inversions or unexpected rain washout episodes.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-500 font-bold">•</span>
+                  <span>Provides no physical reasoning — authorities cannot explain the forecast to citizens.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-500 font-bold">•</span>
+                  <span>Zero counterfactual capability — cannot evaluate "What if stubble fires drop by 50%?"</span>
+                </li>
+              </ul>
+              <div className="p-3 bg-white/[0.02] border border-white/[0.04] rounded-lg text-xs font-mono text-slate-500">
+                Past PM2.5 → Generic Model → Next PM2.5 (No explainability)
+              </div>
+            </div>
+
+            {/* AeroSense Approach */}
+            <div className="bg-[#0c111a] border border-sky-500/30 rounded-xl p-6 md:p-8 space-y-6 shadow-[0_0_40px_rgba(56,189,248,0.06)] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center gap-2 text-xs font-mono text-sky-400 uppercase tracking-wider">
+                <CheckCircle2 className="w-4 h-4 text-sky-400" />
+                <span>AeroSense Physics-Guided Architecture</span>
+              </div>
+              <h3 className="text-lg font-bold text-white">
+                Coupled Atmospheric & Transport Intelligence
+              </h3>
+              <ul className="space-y-3 text-xs text-slate-200">
+                <li className="flex items-start gap-2">
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span>Station graph modulated by real-time wind vectors for genuine physical advection.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span>Atmospheric Regime Engine explicitly identifies thermal inversion & stagnation risks.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span>Eulerian WRF-Chem numerical chemistry blended with AI residual bias correction.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span>Interactive What-If Decision Lab for policy sensitivity and emergency contingency.</span>
+                </li>
+              </ul>
+              <div className="p-3 bg-sky-500/[0.06] border border-sky-500/20 rounded-lg text-xs font-mono text-sky-300">
+                CAAQMS + IMD + FIRMS → Regime + GNN-Transformer + WRF-Chem → 72h Blended + Explainability
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 3: HOW IT WORKS ── */}
+      <section id="how-it-works" className="py-24 border-t border-white/[0.06] bg-[#080d16]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-12">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              End-to-End Operational Pipeline
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              Seven stages from ground telemetry to decision support.
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-3">
+              Scroll through the scientific pipeline that powers AeroSense’s 72-hour operational forecasts.
+            </p>
+          </div>
+
+          <PipelineFlow />
+        </div>
+      </section>
+
+      {/* ── SECTION 4: WHY THE FORECAST CHANGES ── */}
+      <section className="py-24 border-t border-white/[0.06] bg-[#06090e]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-16">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              Atmospheric Dynamics
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              Why the forecast changes: three physical drivers.
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-3">
+              Pollution surges in Delhi NCR are not random. They stem from predictable transitions between physical atmospheric regimes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Story 1 */}
+            <div className="bg-[#0c111a] border border-white/[0.08] rounded-xl p-6 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mb-4">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  1. Strong Thermal Inversion
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  During clear winter nights, rapid radiative ground cooling creates a warmer layer of air aloft. This acts as a lid, compressing the planetary boundary layer below 300 meters and trapping pollutants near ground level.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-white/[0.06] text-[11px] font-mono text-rose-400">
+                PBLH &lt; 350m • Inversion Risk &gt; 70/100
+              </div>
+            </div>
+
+            {/* Story 2 */}
+            <div className="bg-[#0c111a] border border-white/[0.08] rounded-xl p-6 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-4">
+                  <Wind className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  2. Weak Winds & Stagnation
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  When surface wind speeds drop below 1.5 m/s, atmospheric ventilation collapses. Local emissions from traffic, generators, and industries pool inside city sectors without horizontal dispersion.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-white/[0.06] text-[11px] font-mono text-amber-400">
+                Ventilation &lt; 2,500 m²/s • Stagnation Index &gt; 65
+              </div>
+            </div>
+
+            {/* Story 3 */}
+            <div className="bg-[#0c111a] border border-white/[0.08] rounded-xl p-6 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 flex items-center justify-center mb-4">
+                  <Flame className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  3. Regional Fire Transport
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  When North-Westerly winds align with intensive post-monsoon agricultural residue burning in Punjab and Haryana, a massive transboundary smoke plume travels downwind directly into the Delhi NCR basin.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-white/[0.06] text-[11px] font-mono text-orange-400">
+                Bearing: 300°–320° • Transit Time: 12–18 Hours
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 5: 72-HOUR FORECAST ── */}
+      <section className="py-24 border-t border-white/[0.06] bg-[#080d16]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-12">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              Trajectory Forecasting
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              Multi-horizon projections with boundary-layer uncertainty.
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-3">
+              AeroSense outputs continuous 6h, 12h, 24h, 48h, and 72h forecasts with physical confidence bounds instead of deceptive single-number precision.
+            </p>
+          </div>
+
+          <IllustrativeForecastChart />
+        </div>
+      </section>
+
+      {/* ── SECTION 6: WHAT-IF LAB PREVIEW ── */}
+      <section className="py-24 border-t border-white/[0.06] bg-[#06090e]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-12">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              Decision Support
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              What-If Lab: test policy and weather counterfactuals.
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-3">
+              Simulate the atmospheric response to controlled perturbations in wind speed, rain washout, and agricultural burning abatement.
+            </p>
+          </div>
+
+          <WhatIfInteractivePreview />
+        </div>
+      </section>
+
+      {/* ── SECTION 7: RESEARCH & TECHNOLOGY ── */}
+      <section id="technology" className="py-24 border-t border-white/[0.06] bg-[#080d16]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-16">
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400">
+              Technology & Research
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-2">
+              Under the hood: six foundational research pillars.
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-3">
+              Bridging modern deep learning with atmospheric physics and numerical weather prediction.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                title: 'Wind-Aware Spatial GNN',
+                desc: 'Modulates graph edge weights using wind direction dot products. Upwind neighbors exert stronger physical advective influence.',
+                tag: 'Graph Neural Networks',
+                icon: Share2,
+              },
+              {
+                title: 'Temporal Attention Transformer',
+                desc: 'Multi-head temporal self-attention captures non-linear diurnal dependencies and multi-day synoptic weather wave patterns.',
+                tag: 'Deep Sequence Modeling',
+                icon: Cpu,
+              },
+              {
+                title: 'Atmospheric Regime Engine',
+                desc: 'Rule-based atmospheric physics classifier diagnosing Stagnation, Inversion, High Ventilation, or Regional Transport in real time.',
+                tag: 'Physical Meteorology',
+                icon: Layers,
+              },
+              {
+                title: 'WRF-Chem NetCDF Integration',
+                desc: 'Ingests numerical chemistry transport simulation grids (RADM2-MADE/SORGAM) directly from standard NetCDF outputs.',
+                tag: 'Numerical Chemistry',
+                icon: ShieldCheck,
+              },
+              {
+                title: 'Physics-AI Residual Correction',
+                desc: 'Learns systematic boundary layer nocturnal under-predictions and blends numerical chemistry with empirical correction.',
+                tag: 'Residual Learning',
+                icon: Activity,
+              },
+              {
+                title: 'Fire Transport Intelligence',
+                desc: 'Extracts real-time thermal fire radiative power from NASA FIRMS and projects estimated smoke transit corridors into NCR.',
+                tag: 'Satellite Remote Sensing',
+                icon: Flame,
+              },
+            ].map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={idx}
+                  className="bg-[#0c111a] border border-white/[0.08] hover:border-white/[0.16] rounded-xl p-6 flex flex-col justify-between transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-mono uppercase text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded">
+                        {card.tag}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">{card.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 8: FINAL CTA ── */}
+      <section className="py-28 border-t border-white/[0.06] bg-[#06090e] relative overflow-hidden text-center">
+        <div className="absolute inset-0 bg-radial-fade pointer-events-none" />
+        <div className="max-w-4xl mx-auto px-6 relative z-10 space-y-6">
+          <span className="text-xs font-mono uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
+            Ready for Operation
+          </span>
+
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+            From prediction to preparedness.
+          </h2>
+
+          <p className="text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
+            Access the live forecasting console, inspect real-time Delhi NCR CAAQMS observations, evaluate research models, and simulate What-If atmospheric scenarios.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <Link
+              href="/workbench"
+              className="flex items-center gap-2 px-8 py-3.5 text-sm font-semibold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg transition-all shadow-[0_0_30px_rgba(56,189,248,0.35)]"
+            >
+              <span>Open Live Console</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <a
+              href="https://github.com/Sarthak752008/Air-Pollution-Weather-Coupled-Forecasting-System"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-6 py-3.5 text-sm font-medium text-slate-300 hover:text-white border border-white/10 hover:border-white/20 rounded-lg transition-all bg-white/[0.02]"
+            >
+              <Github className="w-4 h-4" />
+              <span>GitHub Repository</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="py-12 border-t border-white/[0.06] bg-[#04060a] text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-sky-400" />
+              <span className="font-bold text-white tracking-tight text-sm">AeroSense</span>
+            </div>
+            <span className="hidden sm:inline text-slate-500">•</span>
+            <span>Delhi NCR Air Intelligence & Coupled Weather Forecasting</span>
+          </div>
+
+          <div className="flex items-center gap-6 text-slate-400 font-mono text-[11px]">
+            <span>SIH26082</span>
+            <span>Ministry of Earth Sciences</span>
+            <a
+              href="https://github.com/Sarthak752008/Air-Pollution-Weather-Coupled-Forecasting-System"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-300 hover:text-white flex items-center gap-1"
+            >
+              <span>GitHub</span>
+              <ArrowUpRight className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
