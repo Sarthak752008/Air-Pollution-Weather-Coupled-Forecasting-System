@@ -161,3 +161,71 @@ export interface ForecastExplanation {
   drivers: DriverAttribution[];
   mode: string;
 }
+
+// ── Phase 3 Model Evaluation & Benchmark Types ──
+
+export interface MetricValues {
+  mae: number;
+  rmse: number;
+  r2: number;
+  mape: number;
+}
+
+export interface HorizonMetric {
+  horizon_hours: number;
+  mae: number;
+  rmse: number;
+  r2: number;
+  mape?: number;
+}
+
+export interface PeakEventMetric {
+  threshold_pm25: number;
+  true_events: number;
+  detected_events: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+}
+
+export interface ModelEvaluationSummary {
+  model_id: string;
+  model_name: string;
+  architecture: string;
+  version: string;
+  parameters: string;
+  metrics_overall: MetricValues;
+  metrics_by_target: Record<string, MetricValues>;
+  horizon_metrics: HorizonMetric[];
+  peak_event_detection: PeakEventMetric;
+}
+
+export interface DatasetSplitInfo {
+  total_hours: number;
+  start_time: string;
+  end_time: string;
+  train_ratio: number;
+  val_ratio: number;
+  test_ratio: number;
+  split_type: string;
+  lookahead_bias: string;
+}
+
+export interface EvaluationBenchmarkResponse {
+  experiment_id: string;
+  experiment_name: string;
+  created_at: string;
+  selected_model_id: string;
+  dataset_split: DatasetSplitInfo;
+  horizons_evaluated: number[];
+  targets_evaluated: string[];
+  models: ModelEvaluationSummary[];
+}
+
+export interface SelectModelResponse {
+  success: boolean;
+  selected_model_id: string;
+  model_name: string;
+  message: string;
+  timestamp: string;
+}
