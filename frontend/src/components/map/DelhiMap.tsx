@@ -5,7 +5,7 @@ import Map, { Marker, NavigationControl, Popup, Source, Layer } from 'react-map-
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Station, Observation, ActiveFirePoint, TransportCorridor } from '@/lib/types';
 import { clsx } from 'clsx';
-import { Flame, Wind, Compass, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Flame, Wind, Compass, AlertCircle, Layers, Eye, EyeOff } from 'lucide-react';
 
 interface StationWithObs extends Station {
   observation?: Observation;
@@ -20,11 +20,13 @@ interface DelhiMapProps {
   windDirection?: number;
   windSpeedMs?: number;
   inversionRiskScore?: number;
+  className?: string;
+  activeMetric?: 'aqi' | 'pm25' | 'o3';
 }
 
 const getAqiColor = (aqi: number | null): string => {
   if (aqi === null) return '#64748b'; // slate-500
-  if (aqi <= 50) return '#22c55e'; // emerald
+  if (aqi <= 50) return '#10b981'; // emerald
   if (aqi <= 100) return '#84cc16'; // lime
   if (aqi <= 200) return '#eab308'; // yellow
   if (aqi <= 300) return '#f97316'; // orange
@@ -41,21 +43,33 @@ export default function DelhiMap({
   windDirection = 300,
   windSpeedMs = 3.2,
   inversionRiskScore = 45,
+  className = '',
+  activeMetric = 'aqi'
 }: DelhiMapProps) {
-  const [popupInfo, setPopupInfo] = useState<StationWithObs | null>(null);
+  const [hoveredStation, setHoveredStation] = useState<StationWithObs | null>(null);
   const [firePopup, setFirePopup] = useState<ActiveFirePoint | null>(null);
 
   // Layer Toggles
   const [showFires, setShowFires] = useState(true);
   const [showWind, setShowWind] = useState(true);
   const [showCorridors, setShowCorridors] = useState(true);
-  const [showInversion, setShowInversion] = useState(true);
+  const [showInversion, setShowInversion] = useState(false);
 
   // Station Markers
   const stationMarkers = useMemo(() => stations.map((station) => {
-    const aqi = station.observation?.aqi ?? null;
+    const obs = station.observation;
+    const aqi = obs?.aqi ?? null;
+    const pm25 = obs?.pollutants.pm25 ?? null;
+    const o3 = obs?.pollutants.o3 ?? null;
+
+    let displayValue: string | number = '--';
+    if (activeMetric === 'aqi') displayValue = aqi !== null ? aqi : '--';
+    else if (activeMetric === 'pm25') displayValue = pm25 !== null ? Math.round(pm25) : '--';
+    else if (activeMetric === 'o3') displayValue = o3 !== null ? Math.round(o3) : '--';
+
     const color = getAqiColor(aqi);
     const isSelected = station.id === selectedStationId;
+    const isSevere = aqi !== null && aqi > 300;
 
     return (
       <Marker
@@ -66,27 +80,33 @@ export default function DelhiMap({
         onClick={(e: any) => {
           e.originalEvent.stopPropagation();
           onSelectStation(station.id);
-          setPopupInfo(station);
           setFirePopup(null);
         }}
       >
         <div
+          onMouseEnter={() => setHoveredStation(station)}
+          onMouseLeave={() => setHoveredStation(null)}
           className={clsx(
-            "flex items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer transition-transform shadow-md",
-            isSelected ? "w-8 h-8 scale-110 ring-2 ring-white/60 z-20" : "w-6 h-6 hover:scale-110"
+            "relative flex items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer transition-all duration-200 shadow-md font-mono",
+            isSelected
+              ? "w-8 h-8 scale-115 ring-2 ring-white z-20 shadow-[0_0_15px_rgba(255,255,255,0.4)]"
+              : "w-6 h-6 hover:scale-115 hover:z-10"
           )}
           style={{ backgroundColor: color }}
         >
-          {aqi !== null ? aqi : '--'}
+          {isSevere && (
+            <span className="absolute inset-0 rounded-full animate-ping opacity-35" style={{ backgroundColor: color }} />
+          )}
+          {displayValue}
         </div>
       </Marker>
     );
-  }), [stations, selectedStationId, onSelectStation]);
+  }), [stations, selectedStationId, onSelectStation, activeMetric]);
 
   // Active Fire Markers
   const fireMarkers = useMemo(() => {
     if (!showFires) return null;
-    return activeFires.slice(0, 45).map((fire) => (
+    return activeFires.slice(0, 40).map((fire) => (
       <Marker
         key={fire.id}
         longitude={fire.longitude}
@@ -95,47 +115,46 @@ export default function DelhiMap({
         onClick={(e: any) => {
           e.originalEvent.stopPropagation();
           setFirePopup(fire);
-          setPopupInfo(null);
         }}
       >
         <div
-          className="cursor-pointer group flex items-center justify-center p-1 rounded-full bg-orange-600/30 border border-orange-500/80 hover:scale-125 transition-transform shadow-lg"
+          className="cursor-pointer group flex items-center justify-center p-1 rounded-full bg-orange-600/30 border border-orange-500/80 hover:scale-125 transition-transform"
           title={`Active Fire: ${fire.frp} MW`}
         >
-          <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping absolute opacity-75" />
-          <div className="w-2.5 h-2.5 rounded-full bg-orange-500 relative" />
+          <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping absolute opacity-60" />
+          <div className="w-2 h-2 rounded-full bg-orange-500 relative" />
         </div>
       </Marker>
     ));
   }, [activeFires, showFires]);
 
-  // Regional Wind Direction Indicators (grid sample points)
+  // Regional Wind Streamline Vectors
   const windMarkers = useMemo(() => {
     if (!showWind) return null;
     const gridPoints = [
-      { id: 'w1', lat: 28.9, lon: 76.9 },
-      { id: 'w2', lat: 28.7, lon: 77.4 },
-      { id: 'w3', lat: 28.4, lon: 77.0 },
-      { id: 'w4', lat: 28.4, lon: 77.3 },
-      { id: 'w5', lat: 28.6, lon: 77.2 },
-      { id: 'w6', lat: 29.2, lon: 76.6 },
+      { id: 'w1', lat: 28.88, lon: 76.92 },
+      { id: 'w2', lat: 28.72, lon: 77.38 },
+      { id: 'w3', lat: 28.45, lon: 77.02 },
+      { id: 'w4', lat: 28.42, lon: 77.32 },
+      { id: 'w5', lat: 28.62, lon: 77.21 },
+      { id: 'w6', lat: 29.15, lon: 76.68 },
     ];
 
     return gridPoints.map((pt) => (
       <Marker key={pt.id} longitude={pt.lon} latitude={pt.lat} anchor="center">
         <div
-          className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-900/60 border border-slate-700/50 text-sky-400 pointer-events-none shadow-sm backdrop-blur-xs"
+          className="flex items-center justify-center w-6 h-6 rounded-full bg-[#070b12]/80 border border-white/10 text-sky-400 pointer-events-none shadow-xs backdrop-blur-xs"
           style={{ transform: `rotate(${windDirection}deg)` }}
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19V5m0 0l-4 4m4-4l4 4" />
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 19V5m0 0l-4 4m4-4l4 4" />
           </svg>
         </div>
       </Marker>
     ));
   }, [showWind, windDirection]);
 
-  // GeoJSON Line data for Transport Corridors
+  // Transport Corridors GeoJSON
   const corridorGeoJson = useMemo(() => {
     if (!showCorridors || transportCorridors.length === 0) return null;
     return {
@@ -157,77 +176,84 @@ export default function DelhiMap({
   }, [showCorridors, transportCorridors]);
 
   return (
-    <div className="w-full h-[520px] rounded-lg overflow-hidden border border-slate-800 bg-slate-950 relative">
-      {/* Map Layer Controls Bar */}
-      <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 bg-slate-900/90 border border-slate-800 p-1.5 rounded-lg shadow-xl backdrop-blur-sm">
-        <button
-          onClick={() => setShowFires(!showFires)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-            showFires
-              ? 'bg-orange-950/80 text-orange-300 border border-orange-800/80'
-              : 'bg-slate-950/60 text-slate-500 border border-transparent hover:text-slate-400'
-          }`}
-        >
-          <Flame className="w-3.5 h-3.5 text-orange-400" />
-          Active Fires {activeFires.length > 0 && `(${activeFires.length})`}
-        </button>
-
+    <div className={`relative w-full h-full bg-[#06090e] overflow-hidden ${className}`}>
+      {/* Top Left Floating Layer Controls Bar */}
+      <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-[#070b12]/90 border border-white/[0.1] p-1.5 rounded-lg shadow-xl backdrop-blur-md text-xs">
         <button
           onClick={() => setShowWind(!showWind)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
             showWind
-              ? 'bg-sky-950/80 text-sky-300 border border-sky-800/80'
-              : 'bg-slate-950/60 text-slate-500 border border-transparent hover:text-slate-400'
+              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
           }`}
         >
           <Wind className="w-3.5 h-3.5 text-sky-400" />
-          Wind ({windSpeedMs.toFixed(1)} m/s, {windDirection.toFixed(0)}°)
+          <span>Wind {windSpeedMs.toFixed(1)} m/s ({windDirection.toFixed(0)}°)</span>
+        </button>
+
+        <button
+          onClick={() => setShowFires(!showFires)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
+            showFires
+              ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+          }`}
+        >
+          <Flame className="w-3.5 h-3.5 text-orange-400" />
+          <span>Fires ({activeFires.length})</span>
         </button>
 
         <button
           onClick={() => setShowCorridors(!showCorridors)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
             showCorridors
-              ? 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-              : 'bg-slate-950/60 text-slate-500 border border-transparent hover:text-slate-400'
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
           }`}
         >
           <Compass className="w-3.5 h-3.5 text-amber-400" />
-          Transport Corridors
+          <span>Corridors</span>
         </button>
 
         <button
           onClick={() => setShowInversion(!showInversion)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
             showInversion
-              ? 'bg-rose-950/80 text-rose-300 border border-rose-800/80'
-              : 'bg-slate-950/60 text-slate-500 border border-transparent hover:text-slate-400'
+              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
           }`}
         >
           <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-          Inversion Risk ({inversionRiskScore.toFixed(0)}/100)
+          <span>Inversion {inversionRiskScore.toFixed(0)}/100</span>
         </button>
       </div>
 
-      {/* Transport Disclaimer Banner */}
-      <div className="absolute bottom-2 left-3 right-12 z-10 pointer-events-none">
-        <span className="text-[10px] text-slate-400 bg-slate-950/80 border border-slate-800/90 px-2 py-0.5 rounded shadow">
-          ⚠️ Estimated transport trajectory based on prevailing wind advection; not an exact chemical source apportionment.
-        </span>
+      {/* Bottom Right Floating Compact Legend */}
+      <div className="absolute bottom-3 right-3 z-10 bg-[#070b12]/90 border border-white/[0.08] px-3 py-2 rounded-lg shadow-xl backdrop-blur-md text-[10px] font-mono text-slate-300 flex items-center gap-3">
+        <span className="text-slate-500 uppercase tracking-wider">NAQI:</span>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#10b981]" /> 0-50</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#84cc16]" /> 51-100</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#eab308]" /> 101-200</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#f97316]" /> 201-300</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#ef4444]" /> 301-400</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#7c3aed]" /> 401+</span>
+        </div>
       </div>
 
+      {/* Main Map Canvas */}
       <Map
         initialViewState={{
           longitude: 77.2090,
           latitude: 28.6139,
-          zoom: 9.6
+          zoom: 9.8
         }}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
         attributionControl={false}
       >
         <NavigationControl position="top-right" />
 
-        {/* Transport Corridors Layer */}
+        {/* Transport Corridors GeoJSON */}
         {corridorGeoJson && (
           <Source id="transport-corridors-src" type="geojson" data={corridorGeoJson}>
             <Layer
@@ -235,7 +261,7 @@ export default function DelhiMap({
               type="line"
               paint={{
                 'line-color': '#f59e0b',
-                'line-width': 2.2,
+                'line-width': 2,
                 'line-opacity': 0.75,
                 'line-dasharray': [3, 2]
               }}
@@ -248,28 +274,21 @@ export default function DelhiMap({
         {fireMarkers}
         {stationMarkers}
 
-        {/* Station Popup */}
-        {popupInfo && (
+        {/* Hover Tooltip */}
+        {hoveredStation && (
           <Popup
-            anchor="top"
-            longitude={popupInfo.longitude}
-            latitude={popupInfo.latitude}
-            onClose={() => setPopupInfo(null)}
+            anchor="bottom"
+            longitude={hoveredStation.longitude}
+            latitude={hoveredStation.latitude}
+            closeButton={false}
             closeOnClick={false}
-            offset={15}
+            offset={14}
           >
-            <div className="p-2.5">
-              <div className="font-semibold text-sm mb-1 text-slate-100">{popupInfo.name}</div>
-              <div className="text-xs flex items-center gap-2 mb-1">
-                <span className="text-slate-300">AQI: <strong className="text-slate-100">{popupInfo.observation?.aqi ?? 'N/A'}</strong></span>
-                {popupInfo.observation?.aqi_category && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-slate-700" style={{ backgroundColor: `${getAqiColor(popupInfo.observation.aqi)}30` }}>
-                    {popupInfo.observation.aqi_category}
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] text-slate-400">
-                PM2.5: <span className="font-mono text-slate-200">{popupInfo.observation?.pollutants.pm25 ?? '--'} µg/m³</span>
+            <div className="p-2 text-xs">
+              <div className="font-bold text-white mb-0.5">{hoveredStation.name}</div>
+              <div className="flex items-center gap-2 font-mono">
+                <span className="text-slate-300">AQI: <strong className="text-white">{hoveredStation.observation?.aqi ?? '--'}</strong></span>
+                <span className="text-slate-400">PM2.5: <strong className="text-sky-300">{hoveredStation.observation?.pollutants.pm25?.toFixed(1) ?? '--'}</strong></span>
               </div>
             </div>
           </Popup>
@@ -285,16 +304,15 @@ export default function DelhiMap({
             closeOnClick={false}
             offset={12}
           >
-            <div className="p-2">
-              <div className="font-semibold text-xs text-orange-400 flex items-center gap-1 mb-1">
-                <Flame className="w-3 h-3" />
-                NASA FIRMS Active Fire
+            <div className="p-2 text-xs">
+              <div className="font-bold text-orange-400 flex items-center gap-1 mb-1">
+                <Flame className="w-3.5 h-3.5" />
+                NASA FIRMS Thermal Anomaly
               </div>
-              <div className="text-[11px] text-slate-300 space-y-0.5">
-                <div>FRP: <strong className="font-mono text-orange-300">{firePopup.frp} MW</strong></div>
-                <div>Brightness: <span className="font-mono text-slate-300">{firePopup.brightness} K</span></div>
-                <div>Confidence: <span className="capitalize text-slate-300">{firePopup.confidence}</span></div>
-                <div className="text-[10px] text-slate-500 pt-0.5">{firePopup.acq_date} {firePopup.acq_time} UTC ({firePopup.source})</div>
+              <div className="space-y-0.5 text-[11px] font-mono text-slate-300">
+                <div>FRP: <strong className="text-orange-300">{firePopup.frp} MW</strong></div>
+                <div>Brightness: {firePopup.brightness} K</div>
+                <div>Acquired: {firePopup.acq_date} {firePopup.acq_time} UTC</div>
               </div>
             </div>
           </Popup>
