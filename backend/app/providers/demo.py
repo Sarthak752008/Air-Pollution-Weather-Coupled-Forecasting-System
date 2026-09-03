@@ -15,9 +15,9 @@ from .base import AQDataProvider, WeatherDataProvider
 class DemoDataProvider(AQDataProvider, WeatherDataProvider):
     """Generates synthetic but realistic Delhi NCR air quality and weather data."""
 
-    def _get_seed(self, station_id: str, dt: datetime) -> float:
+    def _get_seed(self, station_id, dt: datetime) -> float:
         """Deterministic seed from station + hour for reproducible values."""
-        s = f"{station_id}_{dt.strftime('%Y%m%d%H')}"
+        s = f"{str(station_id)}_{dt.strftime('%Y%m%d%H')}"
         return int(hashlib.md5(s.encode()).hexdigest(), 16) / (16**32)
 
     def _generate_observation(self, station_id: str, dt: datetime) -> Dict:
@@ -35,7 +35,7 @@ class DemoDataProvider(AQDataProvider, WeatherDataProvider):
         diurnal_factor = 1.0 + 0.3 * diurnal
 
         # Station-specific base
-        station_hash = int(hashlib.md5(station_id.encode()).hexdigest()[:6], 16)
+        station_hash = int(hashlib.md5(str(station_id).encode()).hexdigest()[:6], 16)
         base_pm25 = 80 + (station_hash % 60)
 
         noise = (seed - 0.5) * 40

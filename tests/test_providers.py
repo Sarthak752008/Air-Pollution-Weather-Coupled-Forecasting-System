@@ -58,5 +58,5 @@ class TestDemoProviderConnection:
     def test_always_connected(self):
         import asyncio
         provider = DemoDataProvider()
-        result = asyncio.get_event_loop().run_until_complete(provider.check_connection())
+        result = asyncio.run(provider.check_connection())
         assert result is True
