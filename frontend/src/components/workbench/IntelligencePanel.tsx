@@ -134,7 +134,7 @@ export default function IntelligencePanel({
   const meteo = selectedObservation?.meteorology;
 
   return (
-    <div className="w-[360px] h-full bg-[#0c111a] border-l border-white/[0.08] flex flex-col justify-between shrink-0 overflow-hidden select-none">
+    <div className="w-full h-full bg-[#0c111a] flex flex-col justify-between overflow-hidden select-none">
       {/* Top Tab Bar */}
       <div className="p-3 border-b border-white/[0.08] flex items-center gap-1 shrink-0 bg-[#070b12]">
         <button

@@ -33,7 +33,7 @@ export default function ForecastTimeline({
 
   if (loading) {
     return (
-      <div className={`h-[260px] bg-[#0c111a] border-t border-white/[0.08] p-4 flex items-center justify-center animate-pulse text-xs text-slate-500 font-mono shrink-0 ${className}`}>
+      <div className={`bg-[#0c111a] border border-white/[0.08] p-6 flex items-center justify-center animate-pulse text-xs text-slate-500 font-mono shrink-0 ${className || 'h-[320px]'}`}>
         Computing 72-hour coupled forecast trajectory...
       </div>
     );
@@ -44,7 +44,7 @@ export default function ForecastTimeline({
 
   if (points.length === 0) {
     return (
-      <div className={`h-[260px] bg-[#0c111a] border-t border-white/[0.08] p-4 flex items-center justify-center text-xs text-slate-500 font-mono shrink-0 ${className}`}>
+      <div className={`bg-[#0c111a] border border-white/[0.08] p-6 flex items-center justify-center text-xs text-slate-500 font-mono shrink-0 ${className || 'h-[320px]'}`}>
         Select a monitoring station to view 72-hour forecast timeline
       </div>
     );
@@ -56,7 +56,7 @@ export default function ForecastTimeline({
   };
 
   return (
-    <div className={`h-[260px] bg-[#0c111a] border-t border-white/[0.08] px-4 py-2.5 flex flex-col justify-between shrink-0 select-none ${className}`}>
+    <div className={`bg-[#0c111a] border border-white/[0.08] px-5 py-3.5 flex flex-col justify-between shrink-0 select-none ${className || 'h-[320px]'}`}>
       {/* Top Controls Bar */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4">
@@ -122,7 +122,7 @@ export default function ForecastTimeline({
       </div>
 
       {/* Trajectory Chart */}
-      <div className="h-[195px] w-full">
+      <div className="flex-1 min-h-[200px] w-full pt-1">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={points as any[]} margin={{ top: 5, right: 15, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.5} vertical={false} />

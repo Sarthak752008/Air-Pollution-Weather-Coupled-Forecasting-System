@@ -262,47 +262,93 @@ export default function WorkbenchPage() {
           </div>
         ) : (
           /* Default: Overview & Map-First Workspace */
-          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-            {/* Top Connected KPI Strip */}
-            <OverviewScreen
-              observation={selectedObservation}
-              stationName={selectedStation?.name || 'Delhi NCR Basin'}
-            />
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto overflow-x-hidden">
+            {/* SCREEN 1: Map-First Initial Viewport */}
+            <div className="h-full min-h-[640px] w-full flex flex-col shrink-0">
+              {/* Top Connected KPI Strip */}
+              <OverviewScreen
+                observation={selectedObservation}
+                stationName={selectedStation?.name || 'Delhi NCR Basin'}
+              />
 
-            {/* Central Workspace: Map (flex-1) + Intelligence Panel (360px) */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] overflow-hidden relative">
-              <div className="relative w-full h-full min-w-0 min-h-0 overflow-hidden">
-                <DelhiMap
-                  stations={stationsWithObs}
-                  onSelectStation={handleSelectStation}
-                  selectedStationId={selectedStationId}
-                  activeFires={activeFires}
-                  transportCorridors={transportCorridors}
-                  windDirection={dominantWindDir}
-                  windSpeedMs={windSpeed}
-                  inversionRiskScore={indices?.inversion_risk_score ?? 45}
+              {/* Central Workspace: Large Map + 440px Atmospheric Intelligence Panel */}
+              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_440px] overflow-hidden relative">
+                {/* Large Delhi NCR Airshed Geospatial Map */}
+                <div className="relative w-full h-full min-w-0 min-h-0 overflow-hidden">
+                  <DelhiMap
+                    stations={stationsWithObs}
+                    onSelectStation={handleSelectStation}
+                    selectedStationId={selectedStationId}
+                    activeFires={activeFires}
+                    transportCorridors={transportCorridors}
+                    windDirection={dominantWindDir}
+                    windSpeedMs={windSpeed}
+                    inversionRiskScore={indices?.inversion_risk_score ?? 45}
+                  />
+                </div>
+
+                {/* Right 440px Atmospheric Intelligence Panel */}
+                <div className="w-full h-full overflow-y-auto shrink-0 bg-[#0c111a] border-l border-white/[0.08]">
+                  <IntelligencePanel
+                    regime={regime}
+                    indices={indices}
+                    explanation={explanation}
+                    selectedStation={selectedStation}
+                    selectedObservation={selectedObservation}
+                    forecast={forecast}
+                    loading={loading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* SCREEN 2 (BELOW THE FOLD): Scrollable 72-Hour Forecast & Physical Attribution */}
+            <div className="w-full bg-[#070b12] border-t border-white/[0.08] p-6 lg:p-8 space-y-8 shrink-0">
+              {/* 72-Hour Trajectory Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                      72-Hour Atmospheric Projection & Uncertainty Ribbon
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Coupled WRF-Chem atmospheric simulation with multi-horizon machine learning residual correction
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+                    <span>Target Station:</span>
+                    <span className="text-white font-bold px-2.5 py-0.5 bg-white/[0.06] rounded border border-white/[0.1]">
+                      {selectedStation?.name || 'Anand Vihar'}
+                    </span>
+                  </div>
+                </div>
+
+                <ForecastTimeline
+                  forecast={forecast}
+                  blendedForecast={blendedForecast}
+                  loading={loadingForecast}
+                  className="rounded-xl border border-white/[0.08] shadow-2xl h-[340px]"
                 />
               </div>
 
-              {/* Fixed 360px Intelligence Panel */}
-              <IntelligencePanel
-                regime={regime}
-                indices={indices}
-                explanation={explanation}
-                selectedStation={selectedStation}
-                selectedObservation={selectedObservation}
-                forecast={forecast}
-                loading={loading}
-              />
+              {/* Attribution Drivers & Trapping Mechanics Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-white/[0.06]">
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
+                    Physical Transport & Dispersion Drivers
+                  </h3>
+                  <ForecastExplainer explanation={explanation} loading={loadingForecast} />
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
+                    Boundary Layer Dynamics & Trapping Regime
+                  </h3>
+                  <AtmosphericRegimeCard regime={regime} loading={loading} />
+                  <DerivedIndicesGrid indices={indices} loading={loading} />
+                </div>
+              </div>
             </div>
-
-            {/* Bottom 72h Forecast Timeline */}
-            <ForecastTimeline
-              forecast={forecast}
-              blendedForecast={blendedForecast}
-              loading={loadingForecast}
-              className="h-[260px] shrink-0"
-            />
           </div>
         )}
       </div>

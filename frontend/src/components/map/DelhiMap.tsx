@@ -34,41 +34,58 @@ const getAqiColor = (aqi: number | null): string => {
   return '#7c3aed'; // violet
 };
 
-const SCIENTIFIC_DARK_STYLE = {
-  version: 8 as const,
-  sources: {
-    'esri-dark-base': {
-      type: 'raster' as const,
-      tiles: [
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-      ],
-      tileSize: 256,
-      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+const BASEMAP_STYLES = {
+  dark: {
+    version: 8 as const,
+    sources: {
+      'base': {
+        type: 'raster' as const,
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256
+      },
+      'ref': {
+        type: 'raster' as const,
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256
+      }
     },
-    'esri-dark-reference': {
-      type: 'raster' as const,
-      tiles: [
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
-      ],
-      tileSize: 256
-    }
+    layers: [
+      { id: 'base-layer', type: 'raster' as const, source: 'base', minzoom: 0, maxzoom: 18 },
+      { id: 'ref-layer', type: 'raster' as const, source: 'ref', minzoom: 0, maxzoom: 18 }
+    ]
   },
-  layers: [
-    {
-      id: 'esri-dark-base-layer',
-      type: 'raster' as const,
-      source: 'esri-dark-base',
-      minzoom: 0,
-      maxzoom: 18
+  satellite: {
+    version: 8 as const,
+    sources: {
+      'base': {
+        type: 'raster' as const,
+        tiles: ['https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256
+      },
+      'ref': {
+        type: 'raster' as const,
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256
+      }
     },
-    {
-      id: 'esri-dark-reference-layer',
-      type: 'raster' as const,
-      source: 'esri-dark-reference',
-      minzoom: 0,
-      maxzoom: 18
-    }
-  ]
+    layers: [
+      { id: 'base-layer', type: 'raster' as const, source: 'base', minzoom: 0, maxzoom: 18 },
+      { id: 'ref-layer', type: 'raster' as const, source: 'ref', minzoom: 0, maxzoom: 18 }
+    ]
+  },
+  topo: {
+    version: 8 as const,
+    sources: {
+      'base': {
+        type: 'raster' as const,
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256
+      }
+    },
+    layers: [
+      { id: 'base-layer', type: 'raster' as const, source: 'base', minzoom: 0, maxzoom: 18 }
+    ]
+  }
 };
 
 export default function DelhiMap({
@@ -85,6 +102,7 @@ export default function DelhiMap({
 }: DelhiMapProps) {
   const [hoveredStation, setHoveredStation] = useState<StationWithObs | null>(null);
   const [firePopup, setFirePopup] = useState<ActiveFirePoint | null>(null);
+  const [mapStyleKey, setMapStyleKey] = useState<'dark' | 'satellite' | 'topo'>('dark');
 
   // Layer Toggles
   const [showFires, setShowFires] = useState(true);
@@ -216,6 +234,23 @@ export default function DelhiMap({
     <div className={`relative w-full h-full bg-[#06090e] overflow-hidden ${className}`}>
       {/* Top Left Floating Layer Controls Bar */}
       <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-[#070b12]/90 border border-white/[0.1] p-1.5 rounded-lg shadow-xl backdrop-blur-md text-xs">
+        {/* Basemap Switcher */}
+        <div className="flex items-center gap-0.5 bg-black/40 p-0.5 rounded border border-white/[0.1] font-mono text-[10px] mr-1">
+          {(['dark', 'satellite', 'topo'] as const).map((key) => (
+            <button
+              key={key}
+              onClick={() => setMapStyleKey(key)}
+              className={`px-2 py-0.5 rounded uppercase tracking-wide transition-all ${
+                mapStyleKey === key
+                  ? 'bg-sky-500/25 text-sky-300 font-bold border border-sky-400/40 shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {key === 'dark' ? 'Dark' : key === 'satellite' ? 'Satellite' : 'Terrain'}
+            </button>
+          ))}
+        </div>
+
         <button
           onClick={() => setShowWind(!showWind)}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
@@ -280,18 +315,18 @@ export default function DelhiMap({
 
       {/* Bottom Right Data Attribution Badge */}
       <div className="absolute bottom-3 right-3 z-10 bg-[#070b12]/85 border border-white/[0.08] px-2.5 py-1 rounded text-[10px] font-mono text-slate-400 backdrop-blur-sm pointer-events-none">
-        Basemap: Esri Dark Gray • CAAQMS: CPCB • Weather: IMD
+        Basemap: {mapStyleKey === 'satellite' ? 'Esri Satellite + Places' : mapStyleKey === 'topo' ? 'Esri World Topo' : 'Esri Dark Gray'} • CAAQMS: CPCB • Weather: IMD
       </div>
 
       {/* Main Map Canvas */}
       <Map
         initialViewState={{
-          longitude: 77.2090,
-          latitude: 28.6139,
-          zoom: 9.8
+          longitude: 77.2250,
+          latitude: 28.6300,
+          zoom: 10.2
         }}
         style={{ width: '100%', height: '100%' }}
-        mapStyle={SCIENTIFIC_DARK_STYLE}
+        mapStyle={BASEMAP_STYLES[mapStyleKey]}
         attributionControl={false}
       >
         <NavigationControl position="top-right" />

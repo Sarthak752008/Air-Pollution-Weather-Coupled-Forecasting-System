@@ -40,5 +40,6 @@ logs/
 
 # Screenshots & Diagnostics
 *.png
+*.jpg
 scratch/
 
