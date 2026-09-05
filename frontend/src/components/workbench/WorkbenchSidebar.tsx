@@ -51,7 +51,7 @@ export default function WorkbenchSidebar({
   return (
     <aside
       className={`bg-[#070b12] border-r border-white/[0.08] flex flex-col justify-between transition-all duration-300 z-20 shrink-0 select-none ${
-        collapsed ? 'w-16' : 'w-56'
+        collapsed ? 'w-16' : 'w-[260px]'
       }`}
     >
       {/* Top Nav Items */}

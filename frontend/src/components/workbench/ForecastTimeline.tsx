@@ -19,19 +19,21 @@ interface ForecastTimelineProps {
   forecast: ForecastResponse | null;
   blendedForecast: BlendedForecastResponse | null;
   loading?: boolean;
+  className?: string;
 }
 
 export default function ForecastTimeline({
   forecast,
   blendedForecast,
-  loading
+  loading,
+  className = ''
 }: ForecastTimelineProps) {
   const [activeTab, setActiveTab] = useState<'pm25' | 'o3' | 'aqi'>('pm25');
   const [showUncertainty, setShowUncertainty] = useState(true);
 
   if (loading) {
     return (
-      <div className="h-44 bg-[#0c111a] border-t border-white/[0.08] p-4 flex items-center justify-center animate-pulse text-xs text-slate-500 font-mono">
+      <div className={`h-[260px] bg-[#0c111a] border-t border-white/[0.08] p-4 flex items-center justify-center animate-pulse text-xs text-slate-500 font-mono shrink-0 ${className}`}>
         Computing 72-hour coupled forecast trajectory...
       </div>
     );
@@ -42,7 +44,7 @@ export default function ForecastTimeline({
 
   if (points.length === 0) {
     return (
-      <div className="h-44 bg-[#0c111a] border-t border-white/[0.08] p-4 flex items-center justify-center text-xs text-slate-500 font-mono">
+      <div className={`h-[260px] bg-[#0c111a] border-t border-white/[0.08] p-4 flex items-center justify-center text-xs text-slate-500 font-mono shrink-0 ${className}`}>
         Select a monitoring station to view 72-hour forecast timeline
       </div>
     );
@@ -54,7 +56,7 @@ export default function ForecastTimeline({
   };
 
   return (
-    <div className="bg-[#0c111a] border-t border-white/[0.08] px-4 py-3 flex flex-col justify-between shrink-0 select-none">
+    <div className={`h-[260px] bg-[#0c111a] border-t border-white/[0.08] px-4 py-2.5 flex flex-col justify-between shrink-0 select-none ${className}`}>
       {/* Top Controls Bar */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4">
@@ -120,7 +122,7 @@ export default function ForecastTimeline({
       </div>
 
       {/* Trajectory Chart */}
-      <div className="h-32 w-full">
+      <div className="h-[195px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={points as any[]} margin={{ top: 5, right: 15, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.5} vertical={false} />

@@ -38,3 +38,7 @@ ml/models/*.pkl
 logs/
 *.log
 
+# Screenshots & Diagnostics
+*.png
+scratch/
+

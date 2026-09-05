@@ -1,0 +1,479 @@
+'use client';
+
+import React, { useState } from 'react';
+import {
+  AtmosphericRegime,
+  DerivedIndices,
+  ForecastExplanation,
+  Station,
+  Observation,
+  ForecastResponse
+} from '@/lib/types';
+import {
+  Wind,
+  Layers,
+  ThermometerSnowflake,
+  Compass,
+  AlertTriangle,
+  Flame,
+  ShieldCheck,
+  CloudRain,
+  Activity,
+  Cpu,
+  MapPin,
+  Thermometer,
+  Droplets,
+  ArrowRight
+} from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+
+interface IntelligencePanelProps {
+  regime: AtmosphericRegime | null;
+  indices: DerivedIndices | null;
+  explanation: ForecastExplanation | null;
+  selectedStation: Station | null;
+  selectedObservation: Observation | null;
+  forecast: ForecastResponse | null;
+  loading?: boolean;
+}
+
+const getAqiColor = (aqi: number | null): string => {
+  if (aqi === null) return '#64748b';
+  if (aqi <= 50) return '#10b981';
+  if (aqi <= 100) return '#84cc16';
+  if (aqi <= 200) return '#eab308';
+  if (aqi <= 300) return '#f97316';
+  if (aqi <= 400) return '#ef4444';
+  return '#7c3aed';
+};
+
+const getRegimeMeta = (regimeName: string) => {
+  switch (regimeName) {
+    case 'STRONG_INVERSION':
+      return {
+        label: 'Strong Thermal Inversion',
+        badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        icon: AlertTriangle,
+        iconColor: 'text-rose-400',
+        trapping: 'Severe (PBLH < 350m)'
+      };
+    case 'REGIONAL_TRANSPORT':
+      return {
+        label: 'Regional Smoke Transport',
+        badge: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+        icon: Flame,
+        iconColor: 'text-orange-400',
+        trapping: 'Advective Smoke Influx'
+      };
+    case 'STAGNATION':
+      return {
+        label: 'Atmospheric Stagnation',
+        badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        icon: Activity,
+        iconColor: 'text-amber-400',
+        trapping: 'High (Calm Surface Winds)'
+      };
+    case 'HIGH_VENTILATION':
+      return {
+        label: 'High Dispersion / Flushing',
+        badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        icon: Wind,
+        iconColor: 'text-emerald-400',
+        trapping: 'Low (Active Flushing)'
+      };
+    case 'RAIN_WASHOUT':
+      return {
+        label: 'Precipitation Scavenging',
+        badge: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+        icon: CloudRain,
+        iconColor: 'text-sky-400',
+        trapping: 'Washout / Wet Deposition'
+      };
+    default:
+      return {
+        label: 'Normal Diurnal Dispersion',
+        badge: 'bg-slate-700/40 text-slate-300 border-slate-700/60',
+        icon: ShieldCheck,
+        iconColor: 'text-slate-400',
+        trapping: 'Moderate Diurnal Cycle'
+      };
+  }
+};
+
+export default function IntelligencePanel({
+  regime,
+  indices,
+  explanation,
+  selectedStation,
+  selectedObservation,
+  forecast,
+  loading = false,
+}: IntelligencePanelProps) {
+  const [activeTab, setActiveTab] = useState<'atmospheric' | 'station'>('atmospheric');
+
+  const regimeName = regime?.regime || 'NORMAL';
+  const meta = getRegimeMeta(regimeName);
+  const RegimeIcon = meta.icon;
+  const confPct = Math.round((regime?.confidence ?? 0.85) * 100);
+
+  const viCat = indices?.ventilation_category || 'Moderate';
+  const viBadge =
+    viCat === 'Critical'
+      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+      : viCat === 'Moderate'
+      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+
+  const siVal = indices?.stagnation_index ?? 40;
+  const invVal = indices?.inversion_risk_score ?? 45;
+  const transVal = indices?.wind_transport_indicator ?? 50;
+
+  const aqi = selectedObservation?.aqi ?? null;
+  const aqiColor = getAqiColor(aqi);
+  const pollutants = selectedObservation?.pollutants;
+  const meteo = selectedObservation?.meteorology;
+
+  return (
+    <div className="w-[360px] h-full bg-[#0c111a] border-l border-white/[0.08] flex flex-col justify-between shrink-0 overflow-hidden select-none">
+      {/* Top Tab Bar */}
+      <div className="p-3 border-b border-white/[0.08] flex items-center gap-1 shrink-0 bg-[#070b12]">
+        <button
+          onClick={() => setActiveTab('atmospheric')}
+          className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'atmospheric'
+              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5 text-sky-400" />
+          <span>Atmospheric State</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('station')}
+          className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'station'
+              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5 text-amber-400" />
+          <span className="truncate">{selectedStation ? selectedStation.name.split(' ')[0] : 'Station'}</span>
+        </button>
+      </div>
+
+      {/* Scrollable Content Body */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-w-0">
+        {activeTab === 'atmospheric' ? (
+          <>
+            {/* 1. Atmospheric Regime Card */}
+            <div className="bg-[#070b12] border border-white/[0.08] rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+                    <RegimeIcon className={`w-4 h-4 ${meta.iconColor}`} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block">
+                      Atmospheric Regime
+                    </span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded border inline-block mt-0.5 ${meta.badge}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+                  {confPct}% Conf.
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {regime?.explanation ||
+                  'Stable boundary layer dynamics with nocturnal thermal inversion trapping surface emissions.'}
+              </p>
+
+              <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Trapping Impact:</span>
+                <span className="text-white font-semibold">{meta.trapping}</span>
+              </div>
+            </div>
+
+            {/* 2. Derived Indices 2x2 Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+                  Dispersion & Stability Indices
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">WS × PBLH</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Ventilation Index */}
+                <div className="p-3 rounded-xl bg-[#070b12] border border-white/[0.06] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Ventilation</span>
+                    <Wind className="w-3 h-3 text-sky-400" />
+                  </div>
+                  <div className="font-mono font-bold text-base text-white">
+                    {indices?.ventilation_index?.toLocaleString() ?? '2,805'}
+                    <span className="text-[10px] font-normal text-slate-500 ml-1">m²/s</span>
+                  </div>
+                  <span className={`text-[9px] font-semibold font-mono px-1.5 py-0.2 rounded border self-start mt-1.5 ${viBadge}`}>
+                    {viCat}
+                  </span>
+                </div>
+
+                {/* Inversion Risk */}
+                <div className="p-3 rounded-xl bg-[#070b12] border border-white/[0.06] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Inversion Risk</span>
+                    <ThermometerSnowflake className="w-3 h-3 text-rose-400" />
+                  </div>
+                  <div className="font-mono font-bold text-base text-white">
+                    {invVal.toFixed(0)}
+                    <span className="text-[10px] font-normal text-slate-500 ml-1">/ 100</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden mt-2">
+                    <div
+                      className={`h-full ${invVal > 65 ? 'bg-rose-500' : invVal > 35 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(100, Math.max(5, invVal))}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Stagnation Index */}
+                <div className="p-3 rounded-xl bg-[#070b12] border border-white/[0.06] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Stagnation</span>
+                    <Layers className="w-3 h-3 text-amber-400" />
+                  </div>
+                  <div className="font-mono font-bold text-base text-white">
+                    {siVal.toFixed(0)}
+                    <span className="text-[10px] font-normal text-slate-500 ml-1">/ 100</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden mt-2">
+                    <div
+                      className={`h-full ${siVal > 65 ? 'bg-rose-500' : siVal > 40 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(100, Math.max(5, siVal))}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Transport Indicator */}
+                <div className="p-3 rounded-xl bg-[#070b12] border border-white/[0.06] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Transport</span>
+                    <Compass className="w-3 h-3 text-orange-400" />
+                  </div>
+                  <div className="font-mono font-bold text-base text-white">
+                    {transVal.toFixed(0)}
+                    <span className="text-[10px] font-normal text-slate-500 ml-1">/ 100</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden mt-2">
+                    <div
+                      className={`h-full ${transVal > 60 ? 'bg-orange-500' : transVal > 30 ? 'bg-amber-500' : 'bg-slate-600'}`}
+                      style={{ width: `${Math.min(100, Math.max(5, transVal))}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Ranked Driver Attribution */}
+            {explanation && (
+              <div className="bg-[#070b12] border border-white/[0.08] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-sky-400" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                      Coupled Driver Attribution
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {explanation.dispersion_rating}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-300 leading-normal">
+                  {explanation.summary}
+                </p>
+
+                {/* Ranked Driver Bars */}
+                <div className="space-y-2 pt-1">
+                  {explanation.drivers?.map((d, i) => (
+                    <div key={i} className="text-[11px] space-y-1">
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="truncate pr-2">{d.factor}</span>
+                        <span className="font-mono font-bold text-white">{d.contribution_pct.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${
+                            d.impact === 'trapping'
+                              ? 'bg-rose-500'
+                              : d.impact === 'clearing'
+                              ? 'bg-emerald-500'
+                              : 'bg-orange-500'
+                          }`}
+                          style={{ width: `${d.contribution_pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Station Details Tab */
+          <div className="space-y-4">
+            {selectedStation ? (
+              <>
+                {/* Station Identification Card */}
+                <div className="bg-[#070b12] border border-white/[0.08] rounded-xl p-4 space-y-3">
+                  <div>
+                    <span className="text-[10px] font-mono text-sky-400 uppercase tracking-wider block">
+                      {selectedStation.city}, {selectedStation.state} • {selectedStation.zone_type}
+                    </span>
+                    <h3 className="text-base font-bold text-white mt-0.5">{selectedStation.name}</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      {selectedStation.operating_agency} • {selectedStation.latitude.toFixed(4)}°N, {selectedStation.longitude.toFixed(4)}°E
+                    </p>
+                  </div>
+
+                  {/* AQI Hero */}
+                  <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono text-slate-400 uppercase block">Current AQI</span>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="text-3xl font-extrabold font-mono" style={{ color: aqiColor }}>
+                          {aqi ?? '--'}
+                        </span>
+                        {selectedObservation?.aqi_category && (
+                          <span
+                            className="text-xs px-2 py-0.5 rounded font-semibold border"
+                            style={{
+                              backgroundColor: `${aqiColor}20`,
+                              borderColor: `${aqiColor}50`,
+                              color: aqiColor
+                            }}
+                          >
+                            {selectedObservation.aqi_category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right text-[11px] font-mono text-slate-400">
+                      <div>Prominent: <strong className="text-white">{selectedObservation?.prominent_pollutant || 'PM2.5'}</strong></div>
+                      <div>Mode: <span className="text-sky-400">{selectedObservation?.mode || 'DEMO'}</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pollutant Matrix */}
+                <div className="bg-[#070b12] border border-white/[0.08] rounded-xl p-4 space-y-2.5">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
+                    Observed Pollutants (Ground Sensors)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'PM2.5', val: pollutants?.pm25, unit: 'µg/m³', bold: true },
+                      { label: 'PM10', val: pollutants?.pm10, unit: 'µg/m³' },
+                      { label: 'NO2', val: pollutants?.no2, unit: 'µg/m³' },
+                      { label: 'SO2', val: pollutants?.so2, unit: 'µg/m³' },
+                      { label: 'CO', val: pollutants?.co, unit: 'mg/m³' },
+                      { label: 'O3', val: pollutants?.o3, unit: 'µg/m³' },
+                    ].map((p, i) => (
+                      <div key={i} className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                        <span className="text-[10px] text-slate-400 font-mono block">{p.label}</span>
+                        <span className={`text-xs font-mono ${p.bold ? 'font-bold text-sky-300 text-sm' : 'text-slate-200'}`}>
+                          {p.val !== null && p.val !== undefined ? p.val.toFixed(1) : '--'}
+                        </span>
+                        <span className="text-[9px] text-slate-500 block">{p.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Surface Meteorology */}
+                <div className="bg-[#070b12] border border-white/[0.08] rounded-xl p-4 space-y-2.5">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
+                    Surface Meteorology (IMD)
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center gap-2.5">
+                      <Thermometer className="w-4 h-4 text-amber-400" />
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Temperature</span>
+                        <span className="font-mono text-slate-200 font-semibold">{meteo?.temperature ? `${meteo.temperature.toFixed(1)}°C` : '--'}</span>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center gap-2.5">
+                      <Droplets className="w-4 h-4 text-blue-400" />
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Humidity</span>
+                        <span className="font-mono text-slate-200 font-semibold">{meteo?.humidity ? `${meteo.humidity.toFixed(0)}%` : '--'}</span>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center gap-2.5">
+                      <Wind className="w-4 h-4 text-sky-400" />
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Wind Velocity</span>
+                        <span className="font-mono text-slate-200 font-semibold">{meteo?.wind_speed ? `${meteo.wind_speed.toFixed(1)} m/s` : '--'}</span>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center gap-2.5">
+                      <Compass className="w-4 h-4 text-teal-400" />
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Bearing</span>
+                        <span className="font-mono text-slate-200 font-semibold">{meteo?.wind_direction ? `${meteo.wind_direction.toFixed(0)}°` : '--'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mini Forecast Sparkline */}
+                {forecast && forecast.points && forecast.points.length > 0 && (
+                  <div className="bg-[#070b12] border border-white/[0.08] rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
+                        72h Mini Trend (PM2.5)
+                      </span>
+                      <span className="text-[10px] font-mono text-sky-400">
+                        {forecast.model_version}
+                      </span>
+                    </div>
+                    <div className="h-24 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={forecast.points.filter((_, i) => i % 3 === 0)}>
+                          <XAxis dataKey="hour_offset" stroke="#64748b" fontSize={9} tickFormatter={(v) => `+${v}h`} />
+                          <YAxis stroke="#64748b" fontSize={9} hide domain={['auto', 'auto']} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#070b12', borderColor: '#334155', borderRadius: '6px', fontSize: '11px' }}
+                            formatter={(v: any) => [`${v} µg/m³`, 'PM2.5']}
+                            labelFormatter={(l) => `+${l}h`}
+                          />
+                          <Line type="monotone" dataKey="pm25_predicted" stroke="#38bdf8" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="py-12 text-center text-xs text-slate-500">
+                Click any monitoring station pin on the map to inspect live ground telemetry and micro-forecast.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Telemetry Footer */}
+      <div className="p-3 border-t border-white/[0.08] text-[10px] font-mono text-slate-500 flex items-center justify-between shrink-0 bg-[#070b12]">
+        <span>Grid: 0.1° (~10km)</span>
+        <span>AeroSense SIH26082</span>
+      </div>
+    </div>
+  );
+}

@@ -34,6 +34,43 @@ const getAqiColor = (aqi: number | null): string => {
   return '#7c3aed'; // violet
 };
 
+const SCIENTIFIC_DARK_STYLE = {
+  version: 8 as const,
+  sources: {
+    'esri-dark-base': {
+      type: 'raster' as const,
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+      ],
+      tileSize: 256,
+      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+    },
+    'esri-dark-reference': {
+      type: 'raster' as const,
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
+      ],
+      tileSize: 256
+    }
+  },
+  layers: [
+    {
+      id: 'esri-dark-base-layer',
+      type: 'raster' as const,
+      source: 'esri-dark-base',
+      minzoom: 0,
+      maxzoom: 18
+    },
+    {
+      id: 'esri-dark-reference-layer',
+      type: 'raster' as const,
+      source: 'esri-dark-reference',
+      minzoom: 0,
+      maxzoom: 18
+    }
+  ]
+};
+
 export default function DelhiMap({
   stations,
   onSelectStation,
@@ -228,9 +265,9 @@ export default function DelhiMap({
         </button>
       </div>
 
-      {/* Bottom Right Floating Compact Legend */}
-      <div className="absolute bottom-3 right-3 z-10 bg-[#070b12]/90 border border-white/[0.08] px-3 py-2 rounded-lg shadow-xl backdrop-blur-md text-[10px] font-mono text-slate-300 flex items-center gap-3">
-        <span className="text-slate-500 uppercase tracking-wider">NAQI:</span>
+      {/* Bottom Left Floating Compact Legend */}
+      <div className="absolute bottom-3 left-3 z-10 bg-[#070b12]/90 border border-white/[0.08] px-3 py-1.5 rounded-lg shadow-xl backdrop-blur-md text-[10px] font-mono text-slate-300 flex items-center gap-3">
+        <span className="text-slate-500 uppercase tracking-wider font-semibold">NAQI:</span>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#10b981]" /> 0-50</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#84cc16]" /> 51-100</span>
@@ -241,6 +278,11 @@ export default function DelhiMap({
         </div>
       </div>
 
+      {/* Bottom Right Data Attribution Badge */}
+      <div className="absolute bottom-3 right-3 z-10 bg-[#070b12]/85 border border-white/[0.08] px-2.5 py-1 rounded text-[10px] font-mono text-slate-400 backdrop-blur-sm pointer-events-none">
+        Basemap: Esri Dark Gray • CAAQMS: CPCB • Weather: IMD
+      </div>
+
       {/* Main Map Canvas */}
       <Map
         initialViewState={{
@@ -248,7 +290,8 @@ export default function DelhiMap({
           latitude: 28.6139,
           zoom: 9.8
         }}
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        style={{ width: '100%', height: '100%' }}
+        mapStyle={SCIENTIFIC_DARK_STYLE}
         attributionControl={false}
       >
         <NavigationControl position="top-right" />

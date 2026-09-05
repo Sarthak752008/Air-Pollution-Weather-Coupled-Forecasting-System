@@ -20,6 +20,7 @@ import WorkbenchHeader from '@/components/workbench/WorkbenchHeader';
 import WorkbenchSidebar, { WorkbenchView } from '@/components/workbench/WorkbenchSidebar';
 import OverviewScreen from '@/components/workbench/OverviewScreen';
 import StationDetailDrawer from '@/components/workbench/StationDetailDrawer';
+import IntelligencePanel from '@/components/workbench/IntelligencePanel';
 import ForecastTimeline from '@/components/workbench/ForecastTimeline';
 import AtmosphericRegimeCard from '@/components/atmospheric/AtmosphericRegimeCard';
 import DerivedIndicesGrid from '@/components/atmospheric/DerivedIndicesGrid';
@@ -261,17 +262,16 @@ export default function WorkbenchPage() {
           </div>
         ) : (
           /* Default: Overview & Map-First Workspace */
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
             {/* Top Connected KPI Strip */}
             <OverviewScreen
               observation={selectedObservation}
               stationName={selectedStation?.name || 'Delhi NCR Basin'}
             />
 
-            {/* Central Workspace: Map + Intelligence Panel + Slide-in Drawer */}
-            <div className="flex-1 flex overflow-hidden relative">
-              {/* Primary Map Workspace (dominates center) */}
-              <div className="flex-1 h-full relative">
+            {/* Central Workspace: Map (flex-1) + Intelligence Panel (360px) */}
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] overflow-hidden relative">
+              <div className="relative w-full h-full min-w-0 min-h-0 overflow-hidden">
                 <DelhiMap
                   stations={stationsWithObs}
                   onSelectStation={handleSelectStation}
@@ -284,40 +284,16 @@ export default function WorkbenchPage() {
                 />
               </div>
 
-              {/* Right Intelligence Strip (on overview mode when drawer is closed) */}
-              {!stationDrawerOpen && (
-                <div className="hidden xl:flex w-88 bg-[#0c111a] border-l border-white/[0.08] p-4 flex-col justify-between overflow-y-auto space-y-4 shrink-0">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
-                      <span className="text-xs font-bold uppercase font-mono tracking-wider text-slate-300">
-                        Atmospheric State
-                      </span>
-                      <span className="text-[10px] font-mono text-sky-400">Live Inversion Trap</span>
-                    </div>
-
-                    <AtmosphericRegimeCard regime={regime} loading={loading} />
-                    <DerivedIndicesGrid indices={indices} loading={loading} />
-
-                    <div className="pt-2">
-                      <ForecastExplainer explanation={explanation} loading={loadingForecast} />
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-[#06090e] rounded-lg border border-white/[0.06] text-[10px] font-mono text-slate-500">
-                    Click any station on the map to inspect full pollutant concentrations & mini trajectory
-                  </div>
-                </div>
-              )}
-
-              {/* Right Slide-in Station Detail Drawer */}
-              {stationDrawerOpen && (
-                <StationDetailDrawer
-                  station={selectedStation}
-                  observation={selectedObservation}
-                  forecast={forecast}
-                  onClose={() => setStationDrawerOpen(false)}
-                />
-              )}
+              {/* Fixed 360px Intelligence Panel */}
+              <IntelligencePanel
+                regime={regime}
+                indices={indices}
+                explanation={explanation}
+                selectedStation={selectedStation}
+                selectedObservation={selectedObservation}
+                forecast={forecast}
+                loading={loading}
+              />
             </div>
 
             {/* Bottom 72h Forecast Timeline */}
@@ -325,6 +301,7 @@ export default function WorkbenchPage() {
               forecast={forecast}
               blendedForecast={blendedForecast}
               loading={loadingForecast}
+              className="h-[260px] shrink-0"
             />
           </div>
         )}
